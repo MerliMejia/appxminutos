@@ -22,6 +22,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "789c0cc8-c673-473f-a299-b777f42d28e6"
+      }
+    },
+    "owner": "merlimejia"
   }
 }
