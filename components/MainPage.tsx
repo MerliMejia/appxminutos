@@ -1,13 +1,18 @@
 import { Button, Input, Text } from "@rneui/themed";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, FlatList, StyleSheet, View } from "react-native";
 import { supabase } from "../lib/supabase";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Tables } from "../database.types";
 
 export const MainPage = () => {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [items, setItems] = useState<Tables<"items">[]>([]);
 
   const addItem = async () => {
+    setIsLoading(true);
     const { data: userResponse } = await supabase.auth.getUser();
     const user = userResponse.user;
 
@@ -30,9 +35,22 @@ export const MainPage = () => {
     else {
       setTitle("");
       setDesc("");
-      Alert.alert("Item Added Successfully");
+      await fetchItems();
+    }
+    setIsLoading(false);
+  };
+
+  const fetchItems = async () => {
+    const { data, error } = await supabase.from("items").select();
+    if (error) Alert.alert(error.message);
+    else {
+      setItems(data);
     }
   };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -43,6 +61,12 @@ export const MainPage = () => {
           onPress={async () => {
             const { error } = await supabase.auth.signOut();
             if (error) Alert.alert(error.message);
+          }}
+          icon={{
+            type: "font-awesome",
+            name: "sign-out",
+            size: 20,
+            color: "white",
           }}
         />
       </View>
@@ -63,8 +87,48 @@ export const MainPage = () => {
           value={desc}
           onChangeText={(e) => setDesc(e)}
         />
-        <Button title="Add" onPress={addItem} />
+        <Button
+          title="Add"
+          onPress={addItem}
+          icon={{
+            type: "font-awesome",
+            name: isLoading ? "spinner" : "plus",
+            size: 20,
+            color: "white",
+          }}
+          disabled={isLoading}
+        />
       </View>
+
+      <FlatList
+        style={{
+          alignSelf: "stretch",
+          marginTop: 20,
+        }}
+        data={items}
+        renderItem={({ item }) => (
+          <View
+            style={{
+              padding: 12,
+              margin: 4,
+              backgroundColor: "#f0f0f0",
+              borderRadius: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 16,
+                marginBottom: 4,
+              }}
+            >
+              {item.title}
+            </Text>
+            <Text>{item.desc}</Text>
+          </View>
+        )}
+        keyExtractor={(item) => item.id.toString()}
+      />
     </View>
   );
 };
